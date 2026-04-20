@@ -1,0 +1,145 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({Name = 'BaoNoob Hub', LoadingTitle = 'ready'})
+
+local VIM = game:GetService("VirtualInputManager")
+local delay = 0.25
+
+-- Trạng thái auto keys
+local autoStates = { Z = false, X = false, C = false, V = false, F = false }
+local autoThreads = {}
+
+-- Freeze variables
+local freezeEnabled = false
+local freezeVelocity = nil
+local freezeAngular = nil
+local freezeAnchor = nil
+
+local function toggleFreeze(state)
+    freezeEnabled = state
+    local char = game.Players.LocalPlayer.Character
+    if not char then return end
+
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if state then
+        -- Khóa di chuyển cực mạnh
+        freezeVelocity = Instance.new("BodyVelocity")
+        freezeVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        freezeVelocity.Velocity = Vector3.new(0, 0, 0)
+        freezeVelocity.Parent = root
+
+        freezeAngular = Instance.new("BodyAngularVelocity")
+        freezeAngular.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        freezeAngular.AngularVelocity = Vector3.new(0, 0, 0)
+        freezeAngular.Parent = root
+
+        -- Anchor để chắc chắn không bị đẩy
+        freezeAnchor = Instance.new("BodyPosition")
+        freezeAnchor.Position = root.Position
+        freezeAnchor.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        freezeAnchor.Parent = root
+
+        -- Ngăn Humanoid di chuyển
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            hum.PlatformStand = true
+            hum.WalkSpeed = 0
+            hum.JumpPower = 0
+        end
+    else
+        -- Tắt freeze
+        if freezeVelocity then freezeVelocity:Destroy() end
+        if freezeAngular then freezeAngular:Destroy() end
+        if freezeAnchor then freezeAnchor:Destroy() end
+
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            hum.PlatformStand = false
+            hum.WalkSpeed = 16
+            hum.JumpPower = 50
+        end
+    end
+end
+
+local function startAuto(keyCode, keyName)
+    if autoThreads[keyName] then task.cancel(autoThreads[keyName]) end
+    autoThreads[keyName] = task.spawn(function()
+        while autoStates[keyName] do
+            VIM:SendKeyEvent(true, keyCode, false, game)
+            task.wait(0.05)
+            VIM:SendKeyEvent(false, keyCode, false, game)
+            task.wait(delay)
+        end
+    end)
+end
+
+local Tab = Window:CreateTab('Auto Key')
+
+Tab:CreateSection('Freeze Player')
+Tab:CreateToggle({
+    Name = 'Freeze Player (Khóa cứng, không di chuyển)',
+    CurrentValue = false,
+    Callback = function(Value)
+        toggleFreeze(Value)
+    end,
+})
+
+Tab:CreateSection('Auto Bấm phím')
+Tab:CreateToggle({
+    Name = 'Auto Z',
+    CurrentValue = false,
+    Callback = function(Value)
+        autoStates.Z = Value
+        if Value then startAuto(Enum.KeyCode.Z, "Z") end
+    end,
+})
+
+Tab:CreateToggle({
+    Name = 'Auto X',
+    CurrentValue = false,
+    Callback = function(Value)
+        autoStates.X = Value
+        if Value then startAuto(Enum.KeyCode.X, "X") end
+    end,
+})
+
+Tab:CreateToggle({
+    Name = 'Auto C',
+    CurrentValue = false,
+    Callback = function(Value)
+        autoStates.C = Value
+        if Value then startAuto(Enum.KeyCode.C, "C") end
+    end,
+})
+
+Tab:CreateToggle({
+    Name = 'Auto V',
+    CurrentValue = false,
+    Callback = function(Value)
+        autoStates.V = Value
+        if Value then startAuto(Enum.KeyCode.V, "V") end
+    end,
+})
+
+Tab:CreateToggle({
+    Name = 'Auto F',
+    CurrentValue = false,
+    Callback = function(Value)
+        autoStates.F = Value
+        if Value then startAuto(Enum.KeyCode.F, "F") end
+    end,
+})
+
+Tab:CreateSection('Cài đặt chung')
+Tab:CreateSlider({
+    Name = 'Delay giữa mỗi lần bấm',
+    Range = {0.1, 1},
+    Increment = 0.05,
+    CurrentValue = delay,
+    Callback = function(Value)
+        delay = Value
+    end,
+})
+
+print("Script loaded! Freeze Player + Auto Z X C V F")
