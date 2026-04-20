@@ -1,0 +1,131 @@
+-- =============================================
+-- AUTO CLICKER (không Rayfield) - Tùy chỉnh thời gian
+-- =============================================
+
+local Players = game:GetService("Players")
+local VIM = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+
+local screen = Instance.new("ScreenGui")
+screen.ResetOnSpawn = false
+screen.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 140)
+frame.Position = UDim2.new(0.5, -110, 0.5, -70)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Parent = screen
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = frame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+title.Text = "Auto Clicker"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = title
+
+-- Toggle
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 180, 0, 40)
+toggleBtn.Position = UDim2.new(0, 20, 0, 50)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+toggleBtn.Text = "BẬT AUTO CLICK"
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.TextSize = 16
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.Parent = frame
+
+-- Delay
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(0, 180, 0, 20)
+delayLabel.Position = UDim2.new(0, 20, 0, 100)
+delayLabel.BackgroundTransparency = 1
+delayLabel.Text = "Thời gian giữa click: 0.3 giây"
+delayLabel.TextColor3 = Color3.new(1,1,1)
+delayLabel.TextSize = 14
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.Parent = frame
+
+local delayBox = Instance.new("TextBox")
+delayBox.Size = UDim2.new(0, 60, 0, 25)
+delayBox.Position = UDim2.new(0, 140, 0, 100)
+delayBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+delayBox.Text = "0.3"
+delayBox.TextColor3 = Color3.new(1,1,1)
+delayBox.TextSize = 14
+delayBox.Font = Enum.Font.Gotham
+delayBox.Parent = frame
+
+local autoClick = false
+local clickDelay = 0.3
+
+-- Kéo thả GUI
+local dragging = false
+local dragStart, startPos
+
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+    end
+end)
+
+title.InputEnded:Connect(function() dragging = false end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Toggle Auto Click
+toggleBtn.MouseButton1Click:Connect(function()
+    autoClick = not autoClick
+    if autoClick then
+        toggleBtn.Text = "TẮT AUTO CLICK"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    else
+        toggleBtn.Text = "BẬT AUTO CLICK"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    end
+end)
+
+-- Thay đổi thời gian
+delayBox.FocusLost:Connect(function()
+    local num = tonumber(delayBox.Text)
+    if num and num > 0 then
+        clickDelay = num
+        delayLabel.Text = "Thời gian giữa click: " .. num .. " giây"
+    else
+        delayBox.Text = tostring(clickDelay)
+    end
+end)
+
+-- Auto Click Loop
+task.spawn(function()
+    while true do
+        if autoClick then
+            -- Click trái chuột
+            VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)   -- nhấn
+            task.wait(0.01)
+            VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)  -- thả
+        end
+        task.wait(clickDelay)
+    end
+end)
+
+print("✅ Auto Clicker đã load! Kéo title để di chuyển, chỉnh số trong ô để thay đổi tốc độ.")
